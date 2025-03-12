@@ -20,16 +20,13 @@ class curr_model(abm.Imodel):
     def predict_proba(self,text):
         return self.model.predict_proba(text)
 
+
+
 md = curr_model()
 models = {
     'tone':model.Log_reg_tone(),
     'agression':model2.Log_reg_agression() }
-md.set(models['tone'])
-
-print("hello")
-md = model.Log_reg_tone()
-l = [["Капец","не работает!"]]
-md.predict_proba(l)
+md.set(models['agression'])
 
 token = None
 with open("tg_token.txt") as f:

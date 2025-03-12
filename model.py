@@ -14,9 +14,7 @@ class Log_reg_tone(Imodel):
 
 
     def prepare(self,text):
-        print('prepare',text)
         a = list(map(self.preprocess,text))
-        print("after",a)
         sparse_matrix = self.tfidf.transform(a)
         return sparse_matrix
 
@@ -27,16 +25,17 @@ class Log_reg_tone(Imodel):
         return prediction
 
     def predict_proba(self,text):
-        print("pr_proba",text)
         clf = self.loaded_model
         prepared_text = self.prepare(text)
-        prediction = clf.predict_proba(prepared_text)[0]
-        return f"Вероятность оскорбления {np.round(prediction,5)}"
+        prediction = clf.predict_proba(prepared_text)[0][1]
+        if prediction > 0.5:
+            return f"Позитивное с вероятностью {np.round(prediction,5)}"
+        else:
+            return f"Негативное с вероятностью {1-np.round(prediction,5)}"
     
-    def preprocess(text:str)->str:
+    def preprocess(self,text:str)->str:
         if not isinstance(text,str):
             raise ValueError("text must be string")
-        print("inside",text)
         #text = re.sub(r"http:\S*","",text)
         text = re.sub(r'http[s]?://\S+|www\.\S+', '', text)
         text = re.sub(r"[\n\r.,]"," ",text)
@@ -49,3 +48,4 @@ class Log_reg_tone(Imodel):
         text = re.sub(r'\d+', '', text)
         text = re.sub(r" {1,}", " ",text).strip()
         return str.lower(text)   
+

@@ -35,11 +35,12 @@ class Log_reg_agression(abm.Imodel):
     def predict_proba(self,text):
         clf = self.__loaded_model
         prepared_text = self.prepare(text)
-        prediction = clf.predict_proba(prepared_text)[0]
-        return f"Позитивное с вероятностью {np.round(prediction,5)}"
+        prediction = clf.predict_proba(prepared_text)[0][1]
+        print("prediction",prediction)
+        return f"Вероятность оскорбления {np.round(prediction,5)}"
 
     
-    def preprocess(text:str) -> str :
+    def preprocess(self,text:str) -> str :
         #text = re.sub(r"http:\S*","",text)
         emoticons = re.findall(r"[XХ:=][3зЗD()]+", text)
         emoticons += re.findall(r"[0оОoO]_[0оОoO]", text)
