@@ -1,16 +1,58 @@
 import telebot
 from telebot import types
-import webbrowser
 import model,model2
 import warnings
 warnings.filterwarnings("ignore")
 import sqlite3
+import abstract_model as abm
 
-md = model.Model()
-md2 = model2.Model()
+class curr_model(abm.Imodel):
 
-import token
+    def set(self,model):
+        self.model = model
+    
+    def prepare(self,text):
+        return self.model.prepare(text)
+
+    def predict(self,text):
+        return self.model.predict(text)
+
+    def predict_proba(self,text):
+        return self.model.predict_proba(text)
+
+md = curr_model()
+models = {
+    'tone':model.Log_reg_tone(),
+    'agression':model2.Log_reg_agression() }
+md.set(models['tone'])
+
+print("hello")
+md = model.Log_reg_tone()
+l = [["Капец","не работает!"]]
+md.predict_proba(l)
+
+token = None
+with open("tg_token.txt") as f:
+    token = f.read().strip()
+
 bot = telebot.TeleBot(token)
+
+@bot.message_handler(commands=["mode"])
+def set_mode(message):
+    markup = types.InlineKeyboardMarkup()
+    tone = types.InlineKeyboardButton("Оценка тональности",callback_data="chose_tone")
+    aggressive = types.InlineKeyboardButton("Оценка на агрессивность",callback_data="chose_agression")
+    markup.add(tone,aggressive)
+    bot.send_message(message.chat.id,"Выберите режим",reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data in ['chose_tone','chose_agression'])
+def callback_chose_mode(call):
+    if call.data == 'chose_tone':
+        md.set(models['tone'])
+    elif call.data == 'chose_agression':
+        md.set(models['agression'])
+
 
 @bot.message_handler(commands=["show_data"])
 def show_data(message):
@@ -146,21 +188,17 @@ def assess_tone(message):
     global text
     print(message.text)
     text = [message.text]
-    prediction = md.predict(text)
-    proba = md.predict_proba(text)
+    print(text)
+    prediction = md.predict_proba(text)
     markup = types.InlineKeyboardMarkup()
     button1 = types.InlineKeyboardButton("Разметить самому",callback_data='mark_data')
-    markup.add(button1)
-    if prediction==1:
-        bot.reply_to(message,f"Ваше сообщение позитивное с вероятностью {proba[1]}",reply_markup=markup)
-    else:
-        bot.reply_to(message, f"Ваше сообщение негативное с вероятностью {proba[0]}",reply_markup=markup)
+    markup.add(button1)  
+    bot.reply_to(message,prediction,reply_markup=markup)
+    
 
-    prediction2 = md2.predict(text)
-    proba2 = md2.predict_proba(text)
-    bot.reply_to(message,f"Вероятность оскорбления: {proba2[1]}",reply_markup=markup)
-    if proba2[1] > 0.8 and random.randint(0,100) >= 75:
-        bot.reply_to(message,"Хватит ругаться!!! Лучше почеши мне спинку")
+
+
+    #bot.reply_to(message,"Хватит ругаться!!! Лучше почеши мне спинку")
 
 
 @bot.callback_query_handler(func= lambda call: call.data == 'mark_data')
@@ -205,14 +243,6 @@ def write_in_db(call):
 
     
     
-
-
-    
-  
-
-
-
-
     
     
 import matplotlib.pyplot as plt
