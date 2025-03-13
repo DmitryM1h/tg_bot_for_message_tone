@@ -85,56 +85,6 @@ def show_users(message):
         bot.send_message(message.chat.id,"Пусто")
 
 
-@bot.message_handler(commands=['registration'])
-def registration(message:telebot.types.Message):
-
-    conn = sqlite3.connect('dmih.sql')
-    cur = conn.cursor()
-    cur.execute("""CREATE TABLE IF NOT EXISTS users 
-                (id int auto_increment primary key,
-                name varchar(50),pass varchar(50),
-                tg_id varchar(50))""")
-    cur.execute("SELECT tg_id from users where tg_id = '%s'"%(message.from_user.id))
-    received_id = cur.fetchall()
-    print(received_id)
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-    if len(received_id)==0:
-        bot.send_message(message.chat.id,'Привет! Сейчас зарегистрирую тебя, напиши своё имя')
-        bot.register_next_step_handler(message,user_name)
-    else:
-        bot.send_message(message.chat.id,"Ты уже зарегистрирован!")
-        
-name = None
-def user_name(message):
-    global name
-    name = message.text.strip()
-    bot.send_message(message.chat.id,'Введите пароль')
-    bot.register_next_step_handler(message,user_pass)
-
-
-def user_pass(message):
-    password = message.text.strip()
-    tg_id = message.from_user.id
-    conn = sqlite3.connect('dmih.sql')
-    cur = conn.cursor()
-
-    cur.execute("INSERT INTO users(name,pass,tg_id) VALUES('%s','%s','%s')"%(name,password,tg_id))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton('Список пользователей',callback_data='show_users'))
-    bot.send_message(message.chat.id,'Вы зарегестрированы!',reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data == 'show_users')
-def callback_show_users(call):
-    show_users(call.message)
-
-
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -143,44 +93,8 @@ def start(message):
     bot.send_message(message.chat.id ,f"Привет {name} {last_name}😚😚\nПришли мне сообщение и я оценю его тональность")
 
 
-    
-API_KEY = "93a88a3a688731963bd9931fe60cafaa"    
-import requests
-
-user = {"state":""}
-@bot.message_handler(commands=['weather'])
-def get_weather(message):
-    bot.send_message(message.chat.id,"Введите ваш город")
-    user['state'] = 'typing city'
-
-
-@bot.message_handler(content_types=['text'])
-def choose_func(message):
-    state = user['state']
-    if state == 'typing city':
-        weather(message)
-        user['state'] = ""
-    else:
-        assess_tone(message)
-
-import json
-
-def weather(message):
-    city = message.text.strip().lower()
-    weather = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric")
-    if weather.status_code == 200:
-        data = json.loads(weather.text)
-        w = data['main']['temp']
-        answer = f"Сейчас : {w} градусов"
-        emoji = "🥶" if w < 5 else "☺️"
-        answer += emoji
-        bot.reply_to(message,answer)
-    else:
-        bot.reply_to(message,"Город не найден🥺")
-
-import random
-
 text = []
+@bot.message_handler(content_types=['text'])
 def assess_tone(message):
     global text
     print(message.text)
@@ -192,9 +106,6 @@ def assess_tone(message):
     markup.add(button1)  
     bot.reply_to(message,prediction,reply_markup=markup)
     
-
-
-
     #bot.reply_to(message,"Хватит ругаться!!! Лучше почеши мне спинку")
 
 
